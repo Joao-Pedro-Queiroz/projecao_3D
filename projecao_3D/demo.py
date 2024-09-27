@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 
-# Funções de rotação usando matrizes 3x3
+
 def rotation_matrix_x(theta):
     return np.array([
         [1, 0, 0],
@@ -9,12 +9,14 @@ def rotation_matrix_x(theta):
         [0, np.sin(theta), np.cos(theta)]
     ])
 
+
 def rotation_matrix_y(theta):
     return np.array([
         [np.cos(theta), 0, np.sin(theta)],
         [0, 1, 0],
         [-np.sin(theta), 0, np.cos(theta)]
     ])
+
 
 def rotation_matrix_z(theta):
     return np.array([
@@ -43,9 +45,8 @@ def draw_shape(screen, vertices_2d, edges, color):
                          (vertices_2d[0, start], vertices_2d[1, start]),
                          (vertices_2d[0, end], vertices_2d[1, end]), 1)
 
-# Função principal
+
 def run():
-    # Inicialização do Pygame
     pygame.init()
     screen_width, screen_height = 800, 600
     screen = pygame.display.set_mode((screen_width, screen_height))
@@ -87,12 +88,10 @@ def run():
     rodando = True
 
     while rodando:
-        # Capturar eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 rodando = False
 
-        # Controle de rotação e translação com teclas
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             theta_y -= 0.05
@@ -115,13 +114,11 @@ def run():
         if keys[pygame.K_d]:
             x_offset += 0.1
 
-        # Alternar entre cubo e pirâmide
         if keys[pygame.K_1]:
             shape_choice = 'cube'
         if keys[pygame.K_2]:
             shape_choice = 'pyramid'
 
-        # Seleciona os vértices e arestas do objeto atual
         if shape_choice == 'cube':
             vertices = cube_vertices
             edges = cube_edges
@@ -129,16 +126,12 @@ def run():
             vertices = pyramid_vertices
             edges = pyramid_edges
 
-        # Limpa a tela
         screen.fill(background_color)
 
-        # Matriz de rotação composta
         rotation = rotation_matrix_x(theta_x) @ rotation_matrix_y(theta_y) @ rotation_matrix_z(theta_z)
 
-        # Aplica rotação e translação aos vértices
         rotated_vertices = rotation @ vertices + np.array([[x_offset], [y_offset], [z_offset]])
 
-        # Projeta os vértices no plano 2D
         projected_vertices = project_points(rotated_vertices, 2)
 
         # Converte para coordenadas da tela
@@ -148,11 +141,8 @@ def run():
         # Desenha o objeto na tela
         draw_shape(screen, projected_vertices, edges, line_color)
 
-        # Atualiza a tela
         pygame.display.update()
 
-        # Controla a taxa de frames
         clock.tick(FPS)
 
-    # Termina o Pygame corretamente
     pygame.quit()

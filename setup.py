@@ -2,19 +2,19 @@ from setuptools import setup, find_packages
 
 
 setup(
-    name="camera_alglin",
+    name="projecao_3D",
     version="0.1.0",
     packages=find_packages(),
     install_requires=["pygame", "numpy"],
-    author="João Pedro Queiroz Viana, Felipe Mariano",
+    author="João Pedro Queiroz Viana",
     author_email="joaopqv@al.insper.edu.br, ",
-    description="Uma biblioteca de criptografia.",
+    description="Uma biblioteca de projeção 3D.",
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/Joao-Pedro-Queiroz/camera_alglin",
+    url="https://github.com/Joao-Pedro-Queiroz/projecao_3D",
     entry_points={
         'console_scripts': [
-            'camera_alglin=camera_alglin.main:main',
+            'projecao_3D=projecao_3D.main:main',
         ],
     },
     classifiers=[
