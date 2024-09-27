@@ -1,6 +1,5 @@
 import pygame
 import numpy as np
-import sys
 
 # Funções de rotação usando matrizes 3x3
 def rotation_matrix_x(theta):
@@ -30,9 +29,7 @@ def project_points(vertices, d=1):
     Projeta pontos 3D no plano 2D usando a fórmula da projeção perspectiva.
     d é a distância focal, controlando o nível de perspectiva.
     """
-    with np.errstate(divide='ignore', invalid='ignore'):
-        projected = vertices[:2] / (vertices[2] + d)  # Projeção em perspectiva simples
-        projected = np.nan_to_num(projected)  # Substitui NaN por zero e infinitos por valores finitos
+    projected = vertices[:2] / (vertices[2] + d)  # Projeção em perspectiva simples
     return projected
 
 # Função para desenhar as arestas do objeto na tela
@@ -46,6 +43,7 @@ def draw_shape(screen, vertices_2d, edges, color):
                          (vertices_2d[0, start], vertices_2d[1, start]),
                          (vertices_2d[0, end], vertices_2d[1, end]), 1)
 
+# Função principal
 def run():
     # Inicialização do Pygame
     pygame.init()
@@ -53,6 +51,7 @@ def run():
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Projeção 3D de Formas Geométricas")
     clock = pygame.time.Clock()
+    FPS = 60  # Frames per Second
     background_color = (0, 0, 0)
     line_color = (255, 0, 0)
 
@@ -85,15 +84,14 @@ def run():
     theta_x, theta_y, theta_z = 0, 0, 0
     x_offset, y_offset, z_offset = 0, 0, 5  # Translação inicial no eixo z
     shape_choice = 'cube'  # 'cube' ou 'pyramid'
+    rodando = True
 
-    # Loop principal
-    while True:
-        # Eventos do Pygame
+    while rodando:
+        # Capturar eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-        
+                rodando = False
+
         # Controle de rotação e translação com teclas
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
@@ -136,22 +134,25 @@ def run():
 
         # Matriz de rotação composta
         rotation = rotation_matrix_x(theta_x) @ rotation_matrix_y(theta_y) @ rotation_matrix_z(theta_z)
-        
+
         # Aplica rotação e translação aos vértices
         rotated_vertices = rotation @ vertices + np.array([[x_offset], [y_offset], [z_offset]])
-        
+
         # Projeta os vértices no plano 2D
         projected_vertices = project_points(rotated_vertices, 2)
-        
+
         # Converte para coordenadas da tela
         projected_vertices[0, :] = screen_width / 2 + projected_vertices[0, :] * 100
         projected_vertices[1, :] = screen_height / 2 - projected_vertices[1, :] * 100
-        
+
         # Desenha o objeto na tela
         draw_shape(screen, projected_vertices, edges, line_color)
-        
+
         # Atualiza a tela
-        pygame.display.flip()
-        
+        pygame.display.update()
+
         # Controla a taxa de frames
-        clock.tick(60)
+        clock.tick(FPS)
+
+    # Termina o Pygame corretamente
+    pygame.quit()
