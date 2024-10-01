@@ -4,26 +4,39 @@ import numpy as np
 
 def rotation_matrix_x(theta):
     return np.array([
-        [1, 0, 0],
-        [0, np.cos(theta), -np.sin(theta)],
-        [0, np.sin(theta), np.cos(theta)]
+        [1, 0, 0, 0],
+        [0, np.cos(theta), -np.sin(theta), 0],
+        [0, np.sin(theta), np.cos(theta), 0],
+        [0, 0, 0, 1]
     ])
 
 
 def rotation_matrix_y(theta):
     return np.array([
-        [np.cos(theta), 0, np.sin(theta)],
-        [0, 1, 0],
-        [-np.sin(theta), 0, np.cos(theta)]
+        [np.cos(theta), 0, np.sin(theta), 0],
+        [0, 1, 0, 0],
+        [-np.sin(theta), 0, np.cos(theta), 0],
+        [0, 0, 0, 1]
     ])
 
 
 def rotation_matrix_z(theta):
     return np.array([
-        [np.cos(theta), -np.sin(theta), 0],
-        [np.sin(theta), np.cos(theta), 0],
-        [0, 0, 1]
+        [np.cos(theta), -np.sin(theta), 0, 0],
+        [np.sin(theta), np.cos(theta), 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
     ])
+
+
+def translation_matrix(x_offset, y_offset, z_offset):
+    return np.array([
+        [1, 0, 0, x_offset],
+        [0, 1, 0, y_offset],
+        [0, 0, 1, z_offset],
+        [0, 0, 0, 1]
+    ])
+
 
 # Função de projeção perspectiva com coordenadas homogêneas
 def project_points(vertices, d=1):
@@ -33,6 +46,7 @@ def project_points(vertices, d=1):
     """
     projected = vertices[:2] / (vertices[2] + d)  # Projeção em perspectiva simples
     return projected
+
 
 # Função para desenhar as arestas do objeto na tela
 def draw_shape(screen, vertices_2d, edges, color):
@@ -57,34 +71,33 @@ def run():
     line_color = (255, 0, 0)
 
     # Definição dos vértices e arestas do cubo e pirâmide
-    # Fatores de escala separados para cubo e pirâmide
-    cube_scale_factor = 3.5  # Fator de escala para o cubo
-    pyramid_scale_factor = 4  # Fator de escala para a pirâmide
+    cube_scale_factor = 3.5
+    pyramid_scale_factor = 4
 
     cube_vertices = np.array([
-        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],  # Vértices de trás
-        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]       # Vértices da frente
-    ]).T * cube_scale_factor  # Aplicação do fator de escala para o cubo
+        [-1, -1, -1, 1], [1, -1, -1, 1], [1, 1, -1, 1], [-1, 1, -1, 1],
+        [-1, -1, 1, 1], [1, -1, 1, 1], [1, 1, 1, 1], [-1, 1, 1, 1]
+    ]).T * cube_scale_factor  # Vértices do cubo em coordenadas homogêneas (4x4)
 
     cube_edges = [
-        (0, 1), (1, 2), (2, 3), (3, 0),  # Arestas de trás
-        (4, 5), (5, 6), (6, 7), (7, 4),  # Arestas da frente
-        (0, 4), (1, 5), (2, 6), (3, 7)   # Arestas ligando frente e trás
+        (0, 1), (1, 2), (2, 3), (3, 0),
+        (4, 5), (5, 6), (6, 7), (7, 4),
+        (0, 4), (1, 5), (2, 6), (3, 7)
     ]
 
     pyramid_vertices = np.array([
-        [0, 0, 1], [1, 1, -1], [-1, 1, -1], [-1, -1, -1], [1, -1, -1]
-    ]).T * pyramid_scale_factor  # Aplicação do fator de escala para a pirâmide
+        [0, 0, 1, 1], [1, 1, -1, 1], [-1, 1, -1, 1], [-1, -1, -1, 1], [1, -1, -1, 1]
+    ]).T * pyramid_scale_factor  # Vértices da pirâmide em coordenadas homogêneas (4x4)
 
     pyramid_edges = [
-        (0, 1), (0, 2), (0, 3), (0, 4),  # Faces laterais
-        (1, 2), (2, 3), (3, 4), (4, 1)   # Base
+        (0, 1), (0, 2), (0, 3), (0, 4),
+        (1, 2), (2, 3), (3, 4), (4, 1)
     ]
 
-    # Variáveis de controle de rotação e translação
+    # Variáveis de controle
     theta_x, theta_y, theta_z = 0, 0, 0
-    x_offset, y_offset, z_offset = 0, 0, 5  # Translação inicial no eixo z
-    shape_choice = 'cube'  # 'cube' ou 'pyramid'
+    x_offset, y_offset, z_offset = 0, 0, 5
+    shape_choice = 'cube'
     rodando = True
 
     while rodando:
@@ -129,10 +142,11 @@ def run():
         screen.fill(background_color)
 
         rotation = rotation_matrix_x(theta_x) @ rotation_matrix_y(theta_y) @ rotation_matrix_z(theta_z)
+        translation = translation_matrix(x_offset, y_offset, z_offset)
 
-        rotated_vertices = rotation @ vertices + np.array([[x_offset], [y_offset], [z_offset]])
+        transformed_vertices = translation @ (rotation @ vertices)
 
-        projected_vertices = project_points(rotated_vertices, 2)
+        projected_vertices = project_points(transformed_vertices, 2)
 
         # Converte para coordenadas da tela
         projected_vertices[0, :] = screen_width / 2 + projected_vertices[0, :] * 100
@@ -142,7 +156,6 @@ def run():
         draw_shape(screen, projected_vertices, edges, line_color)
 
         pygame.display.update()
-
         clock.tick(FPS)
 
     pygame.quit()
