@@ -38,6 +38,15 @@ def translation_matrix(x_offset, y_offset, z_offset):
     ])
 
 
+def scaling_matrix(sx, sy, sz):
+    return np.array([
+        [sx, 0, 0, 0],
+        [0, sy, 0, 0],
+        [0, 0, sz, 0],
+        [0, 0, 0, 1]
+    ])
+
+
 # Função de projeção perspectiva com coordenadas homogêneas
 def project_points(vertices, d=1):
     """
@@ -66,18 +75,15 @@ def run():
     screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Projeção 3D de Formas Geométricas")
     clock = pygame.time.Clock()
-    FPS = 60  # Frames per Second
+    FPS = 60
     background_color = (0, 0, 0)
     line_color = (255, 0, 0)
 
     # Definição dos vértices e arestas do cubo e pirâmide
-    cube_scale_factor = 3.5
-    pyramid_scale_factor = 4
-
     cube_vertices = np.array([
         [-1, -1, -1, 1], [1, -1, -1, 1], [1, 1, -1, 1], [-1, 1, -1, 1],
         [-1, -1, 1, 1], [1, -1, 1, 1], [1, 1, 1, 1], [-1, 1, 1, 1]
-    ]).T * cube_scale_factor  # Vértices do cubo em coordenadas homogêneas (4x4)
+    ]).T # Vértices do cubo em coordenadas homogêneas (4x4)
 
     cube_edges = [
         (0, 1), (1, 2), (2, 3), (3, 0),
@@ -87,7 +93,7 @@ def run():
 
     pyramid_vertices = np.array([
         [0, 0, 1, 1], [1, 1, -1, 1], [-1, 1, -1, 1], [-1, -1, -1, 1], [1, -1, -1, 1]
-    ]).T * pyramid_scale_factor  # Vértices da pirâmide em coordenadas homogêneas (4x4)
+    ]).T # Vértices da pirâmide em coordenadas homogêneas (4x4)
 
     pyramid_edges = [
         (0, 1), (0, 2), (0, 3), (0, 4),
@@ -99,6 +105,10 @@ def run():
     x_offset, y_offset, z_offset = 0, 0, 5
     shape_choice = 'cube'
     rodando = True
+
+    # Definir fatores de escala para o cubo e pirâmide
+    cube_scale = (3.5, 3.5, 3.5)
+    pyramid_scale = (4.0, 4.0, 4.0)
 
     while rodando:
         for event in pygame.event.get():
@@ -135,16 +145,19 @@ def run():
         if shape_choice == 'cube':
             vertices = cube_vertices
             edges = cube_edges
+            scale_matrix = scaling_matrix(*cube_scale)
         else:
             vertices = pyramid_vertices
             edges = pyramid_edges
+            scale_matrix = scaling_matrix(*pyramid_scale)
 
         screen.fill(background_color)
 
         rotation = rotation_matrix_x(theta_x) @ rotation_matrix_y(theta_y) @ rotation_matrix_z(theta_z)
         translation = translation_matrix(x_offset, y_offset, z_offset)
 
-        transformed_vertices = translation @ (rotation @ vertices)
+        transformation_matrix = translation @ rotation @ scale_matrix
+        transformed_vertices = transformation_matrix @ vertices
 
         projected_vertices = project_points(transformed_vertices, 2)
 
