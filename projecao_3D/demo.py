@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 
-
+# Funções para gerar as matrizes de transformação
 def rotation_matrix_x(theta):
     return np.array([
         [1, 0, 0, 0],
@@ -9,7 +9,6 @@ def rotation_matrix_x(theta):
         [0, np.sin(theta), np.cos(theta), 0],
         [0, 0, 0, 1]
     ])
-
 
 def rotation_matrix_y(theta):
     return np.array([
@@ -19,7 +18,6 @@ def rotation_matrix_y(theta):
         [0, 0, 0, 1]
     ])
 
-
 def rotation_matrix_z(theta):
     return np.array([
         [np.cos(theta), -np.sin(theta), 0, 0],
@@ -28,46 +26,38 @@ def rotation_matrix_z(theta):
         [0, 0, 0, 1]
     ])
 
-
-def translation_matrix(x_offset, y_offset, z_offset):
+def translation_matrix(tx, ty, tz):
     return np.array([
-        [1, 0, 0, x_offset],
-        [0, 1, 0, y_offset],
-        [0, 0, 1, z_offset],
+        [1, 0, 0, tx],
+        [0, 1, 0, ty],
+        [0, 0, 1, tz],
         [0, 0, 0, 1]
     ])
 
-
-def scaling_matrix(sx, sy, sz):
-    return np.array([
-        [sx, 0, 0, 0],
-        [0, sy, 0, 0],
-        [0, 0, sz, 0],
-        [0, 0, 0, 1]
+# Projeção perspectiva (câmera pinhole) usando multiplicação de matriz
+def project_points(vertices, d):
+    # Matriz de projeção para 3D -> 2D (perspectiva)
+    P = np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, -1/d]
     ])
 
+    # Multiplicação da matriz de projeção com vértices homogêneos
+    projected_vertices_homogeneous = P @ vertices
 
-# Função de projeção perspectiva com coordenadas homogêneas
-def project_points(vertices, d=1):
-    """
-    Projeta pontos 3D no plano 2D usando a fórmula da projeção perspectiva.
-    d é a distância focal, controlando o nível de perspectiva.
-    """
-    projected = vertices[:2] / (vertices[2] + d)  # Projeção em perspectiva simples
-    return projected
+    # Normaliza as coordenadas projetadas dividindo pelo fator homogêneo
+    projected_vertices = projected_vertices_homogeneous[:2] / projected_vertices_homogeneous[2]
 
+    return projected_vertices.T
 
 # Função para desenhar as arestas do objeto na tela
 def draw_shape(screen, vertices_2d, edges, color):
-    """
-    Desenha a forma na tela usando as coordenadas 2D projetadas.
-    """
     for edge in edges:
         start, end = edge
         pygame.draw.line(screen, color,
-                         (vertices_2d[0, start], vertices_2d[1, start]),
-                         (vertices_2d[0, end], vertices_2d[1, end]), 1)
-
+                         (vertices_2d[start][0], vertices_2d[start][1]),
+                         (vertices_2d[end][0], vertices_2d[end][1]), 1)
 
 def run():
     pygame.init()
@@ -79,11 +69,11 @@ def run():
     background_color = (0, 0, 0)
     line_color = (255, 0, 0)
 
-    # Definição dos vértices e arestas do cubo e pirâmide
+    # Definição dos vértices e arestas do cubo e da pirâmide
     cube_vertices = np.array([
         [-1, -1, -1, 1], [1, -1, -1, 1], [1, 1, -1, 1], [-1, 1, -1, 1],
         [-1, -1, 1, 1], [1, -1, 1, 1], [1, 1, 1, 1], [-1, 1, 1, 1]
-    ]).T # Vértices do cubo em coordenadas homogêneas (4x4)
+    ]).T  # Transpor diretamente na definição para operar sem precisar de nova transposição depois
 
     cube_edges = [
         (0, 1), (1, 2), (2, 3), (3, 0),
@@ -93,7 +83,7 @@ def run():
 
     pyramid_vertices = np.array([
         [0, 0, 1, 1], [1, 1, -1, 1], [-1, 1, -1, 1], [-1, -1, -1, 1], [1, -1, -1, 1]
-    ]).T # Vértices da pirâmide em coordenadas homogêneas (4x4)
+    ]).T  # Transpor diretamente na definição
 
     pyramid_edges = [
         (0, 1), (0, 2), (0, 3), (0, 4),
@@ -102,13 +92,12 @@ def run():
 
     # Variáveis de controle
     theta_x, theta_y, theta_z = 0, 0, 0
-    x_offset, y_offset, z_offset = 0, 0, 5
+    x_offset, y_offset, z_offset = 0, 0, 5  # Controle inicial da translação
     shape_choice = 'cube'
     rodando = True
 
-    # Definir fatores de escala para o cubo e pirâmide
-    cube_scale = (3.5, 3.5, 3.5)
-    pyramid_scale = (4.0, 4.0, 4.0)
+    # Distância focal da câmera (d)
+    d = 1.5
 
     while rodando:
         for event in pygame.event.get():
@@ -129,9 +118,9 @@ def run():
         if keys[pygame.K_e]:
             theta_z += 0.05
         if keys[pygame.K_w]:
-            z_offset -= 0.1
+            z_offset -= 0.1  # Movimenta no eixo Z
         if keys[pygame.K_s]:
-            z_offset += 0.1
+            z_offset += 0.1  # Movimenta no eixo Z
         if keys[pygame.K_a]:
             x_offset -= 0.1
         if keys[pygame.K_d]:
@@ -142,28 +131,34 @@ def run():
         if keys[pygame.K_2]:
             shape_choice = 'pyramid'
 
+        screen.fill(background_color)
+
+        # Seleciona vértices e arestas de acordo com a escolha
         if shape_choice == 'cube':
             vertices = cube_vertices
             edges = cube_edges
-            scale_matrix = scaling_matrix(*cube_scale)
         else:
             vertices = pyramid_vertices
             edges = pyramid_edges
-            scale_matrix = scaling_matrix(*pyramid_scale)
 
-        screen.fill(background_color)
-
-        rotation = rotation_matrix_x(theta_x) @ rotation_matrix_y(theta_y) @ rotation_matrix_z(theta_z)
+        # Matriz de transformação completa (rotação + translação)
+        rotation_x = rotation_matrix_x(theta_x)
+        rotation_y = rotation_matrix_y(theta_y)
+        rotation_z = rotation_matrix_z(theta_z)
         translation = translation_matrix(x_offset, y_offset, z_offset)
 
-        transformation_matrix = translation @ rotation @ scale_matrix
+        # Matriz de transformação total (aplicação em sequência)
+        transformation_matrix = translation @ rotation_z @ rotation_y @ rotation_x
+
+        # Aplica a transformação aos vértices (sem precisar de nova transposição)
         transformed_vertices = transformation_matrix @ vertices
 
-        projected_vertices = project_points(transformed_vertices, 2)
+        # Projeta os vértices 3D em 2D usando a projeção matriz
+        projected_vertices = project_points(transformed_vertices, d)
 
         # Converte para coordenadas da tela
-        projected_vertices[0, :] = screen_width / 2 + projected_vertices[0, :] * 100
-        projected_vertices[1, :] = screen_height / 2 - projected_vertices[1, :] * 100
+        projected_vertices[:, 0] = screen_width / 2 + projected_vertices[:, 0] * 100
+        projected_vertices[:, 1] = screen_height / 2 - projected_vertices[:, 1] * 100
 
         # Desenha o objeto na tela
         draw_shape(screen, projected_vertices, edges, line_color)
