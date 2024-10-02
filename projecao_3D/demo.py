@@ -34,22 +34,26 @@ def translation_matrix(tx, ty, tz):
         [0, 0, 0, 1]
     ])
 
-# Projeção perspectiva (câmera pinhole) usando multiplicação de matriz
-def project_points(vertices, d):
-    # Matriz de projeção para 3D -> 2D (perspectiva)
-    P = np.array([
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, -1/d]
+# Matriz de projeção pinhole
+def projection_matrix(d):
+    return np.array([
+        [d, 0, 0, 0],
+        [0, d, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 1/d, 0]
     ])
 
-    # Multiplicação da matriz de projeção com vértices homogêneos
+# Projeção perspectiva (câmera pinhole) usando multiplicação de matriz
+def project_points(vertices, d):
+    P = projection_matrix(d)
+    
+    # Multiplicação da matriz de projeção com os vértices
     projected_vertices_homogeneous = P @ vertices
 
     # Normaliza as coordenadas projetadas dividindo pelo fator homogêneo
-    projected_vertices = projected_vertices_homogeneous[:2] / projected_vertices_homogeneous[2]
+    projected_vertices = projected_vertices_homogeneous[:3] / projected_vertices_homogeneous[3]
 
-    return projected_vertices.T
+    return projected_vertices[:2].T  # Retorna as coordenadas x e y
 
 # Função para desenhar as arestas do objeto na tela
 def draw_shape(screen, vertices_2d, edges, color):
@@ -147,13 +151,11 @@ def run():
         rotation_z = rotation_matrix_z(theta_z)
         translation = translation_matrix(x_offset, y_offset, z_offset)
 
-        # Matriz de transformação total (aplicação em sequência)
+        # Aplica as transformações aos vértices
         transformation_matrix = translation @ rotation_z @ rotation_y @ rotation_x
-
-        # Aplica a transformação aos vértices (sem precisar de nova transposição)
         transformed_vertices = transformation_matrix @ vertices
 
-        # Projeta os vértices 3D em 2D usando a projeção matriz
+        # Projeta os vértices 3D em 2D
         projected_vertices = project_points(transformed_vertices, d)
 
         # Converte para coordenadas da tela

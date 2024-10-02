@@ -1,4 +1,4 @@
-from demo import run
+from projecao_3D.demo import run
 
 def main():
     run()
