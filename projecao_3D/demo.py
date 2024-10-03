@@ -101,7 +101,7 @@ def run():
     rodando = True
 
     # Distância focal da câmera (d)
-    d = 1.5
+    d = 2
 
     while rodando:
         for event in pygame.event.get():
