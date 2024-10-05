@@ -77,7 +77,7 @@ def run():
     cube_vertices = np.array([
         [-1, -1, -1, 1], [1, -1, -1, 1], [1, 1, -1, 1], [-1, 1, -1, 1],
         [-1, -1, 1, 1], [1, -1, 1, 1], [1, 1, 1, 1], [-1, 1, 1, 1]
-    ]).T  # Transpor diretamente na definição para operar sem precisar de nova transposição depois
+    ]).T
 
     cube_edges = [
         (0, 1), (1, 2), (2, 3), (3, 0),
@@ -87,7 +87,7 @@ def run():
 
     pyramid_vertices = np.array([
         [0, 0, 1, 1], [1, 1, -1, 1], [-1, 1, -1, 1], [-1, -1, -1, 1], [1, -1, -1, 1]
-    ]).T  # Transpor diretamente na definição
+    ]).T
 
     pyramid_edges = [
         (0, 1), (0, 2), (0, 3), (0, 4),
@@ -96,7 +96,7 @@ def run():
 
     # Variáveis de controle
     theta_x, theta_y, theta_z = 0, 0, 0
-    x_offset, y_offset, z_offset = 0, 0, 5  # Controle inicial da translação
+    x_offset, y_offset, z_offset = 0, 0, 5
     shape_choice = 'cube'
     rodando = True
 
@@ -122,9 +122,9 @@ def run():
         if keys[pygame.K_e]:
             theta_z += 0.05
         if keys[pygame.K_w]:
-            z_offset -= 0.1  # Movimenta no eixo Z
+            z_offset -= 0.1
         if keys[pygame.K_s]:
-            z_offset += 0.1  # Movimenta no eixo Z
+            z_offset += 0.1
         if keys[pygame.K_a]:
             x_offset -= 0.1
         if keys[pygame.K_d]:
